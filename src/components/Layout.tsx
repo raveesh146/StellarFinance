@@ -32,7 +32,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       <aside className="w-64 bg-white border-r border-gray-200 p-4">
         <div className="flex items-center space-x-2 mb-8">
           <Wallet className="h-8 w-8 text-blue-600" />
-          <h1 className="text-xl font-bold">Financial Passport</h1>
+          <h1 className="text-xl font-bold">StellarFinance</h1>
         </div>
         
         <nav className="space-y-2">

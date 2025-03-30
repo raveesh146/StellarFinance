@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BarChart, Users, FileText, AlertTriangle, TrendingUp, CheckCircle2, Clock, DollarSign, ArrowUpRight, ArrowDownRight, Wallet, BellRing, Shield, LineChart } from 'lucide-react';
+import { WalletConnect } from '../components/walletConnect';
 
 const stats = [
   { name: 'Credit Score', value: '750', icon: BarChart, change: '+5', changeType: 'increase', color: 'blue', trend: [65, 70, 72, 68, 74, 75] },
@@ -103,9 +104,19 @@ const MiniChart: React.FC<{ data: number[], height: number, color: string }> = (
 
 export const Dashboard: React.FC = () => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('6M');
+  const [connectedAddress, setConnectedAddress] = useState('');
+
+  const handleAddressChange = (address: string) => {
+    setConnectedAddress(address);
+  };
 
   return (
     <div className="space-y-8 pb-8">
+      {/* Wallet Connect - Fixed position */}
+      <div className="fixed top-4 right-4 z-50">
+        <WalletConnect onAddressChange={handleAddressChange} />
+      </div>
+
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-pattern opacity-10"></div>
