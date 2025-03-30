@@ -1,11 +1,36 @@
 import React, { useState } from 'react';
-import { Users, DollarSign, FileText, BarChart as ChartBar, Clock } from 'lucide-react';
+import { Users, DollarSign, FileText, BarChart as ChartBar, Clock, X, Edit, Trash2 } from 'lucide-react';
+import { Dialog } from '@headlessui/react';
+
+interface Client {
+  id: number;
+  name: string;
+  riskProfile: 'Conservative' | 'Moderate' | 'Aggressive';
+  portfolioValue: string;
+  lastReview: string;
+  status: 'active' | 'pending' | 'inactive';
+}
+
+interface NewClient {
+  name: string;
+  riskProfile: 'Conservative' | 'Moderate' | 'Aggressive';
+  portfolioValue: string;
+}
 
 export const AdvisorDashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('clients');
+  const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [newClient, setNewClient] = useState<NewClient>({
+    name: '',
+    riskProfile: 'Moderate',
+    portfolioValue: '',
+  });
 
-  // Dummy data
-  const clients = [
+  // Move clients to state
+  const [clients, setClients] = useState<Client[]>([
     {
       id: 1,
       name: 'Alice Johnson',
@@ -30,13 +55,13 @@ export const AdvisorDashboard: React.FC = () => {
       lastReview: '2024-02-25',
       status: 'active',
     },
-  ];
+  ]);
 
   const advisorStats = {
-    totalClients: 24,
-    activePortfolios: 18,
-    pendingReviews: 5,
-    totalAUM: '$4.2M',
+    totalClients: clients.length,
+    activePortfolios: clients.filter(c => c.status === 'active').length,
+    pendingReviews: clients.filter(c => c.status === 'pending').length,
+    totalAUM: formatTotalAUM(clients),
   };
 
   const recentActivities = [
@@ -44,6 +69,72 @@ export const AdvisorDashboard: React.FC = () => {
     { id: 2, type: 'Risk Assessment', client: 'Bob Smith', date: '2024-03-14', status: 'pending' },
     { id: 3, type: 'Document Update', client: 'Carol Williams', date: '2024-03-13', status: 'completed' },
   ];
+
+  function formatTotalAUM(clientList: Client[]): string {
+    const total = clientList.reduce((sum, client) => {
+      const value = parseFloat(client.portfolioValue.replace(/[$,]/g, ''));
+      return sum + value;
+    }, 0);
+    return `$${(total / 1000000).toFixed(1)}M`;
+  }
+
+  const handleAddClient = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const newClientData: Client = {
+      id: clients.length + 1,
+      name: newClient.name,
+      riskProfile: newClient.riskProfile,
+      portfolioValue: newClient.portfolioValue,
+      lastReview: new Date().toISOString().split('T')[0],
+      status: 'pending',
+    };
+
+    setClients(prevClients => [...prevClients, newClientData]);
+    setIsAddClientModalOpen(false);
+    setNewClient({
+      name: '',
+      riskProfile: 'Moderate',
+      portfolioValue: '',
+    });
+  };
+
+  const handleEditClick = (client: Client) => {
+    setSelectedClient(client);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = (client: Client) => {
+    setSelectedClient(client);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleEditClient = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClient) return;
+
+    setClients(prevClients =>
+      prevClients.map(client =>
+        client.id === selectedClient.id
+          ? {
+              ...selectedClient,
+              lastReview: new Date().toISOString().split('T')[0],
+            }
+          : client
+      )
+    );
+
+    setIsEditModalOpen(false);
+    setSelectedClient(null);
+  };
+
+  const handleDeleteClient = () => {
+    if (!selectedClient) return;
+
+    setClients(prevClients => prevClients.filter(client => client.id !== selectedClient.id));
+    setIsDeleteModalOpen(false);
+    setSelectedClient(null);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -145,7 +236,10 @@ export const AdvisorDashboard: React.FC = () => {
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-medium text-gray-900">Clients</h2>
-                <button className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                <button
+                  onClick={() => setIsAddClientModalOpen(true)}
+                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
                   Add New Client
                 </button>
               </div>
@@ -198,9 +292,21 @@ export const AdvisorDashboard: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <button className="text-blue-600 hover:text-blue-900">View</button>
+                          <button
+                            onClick={() => handleEditClick(client)}
+                            className="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </button>
                           <span className="mx-2">|</span>
-                          <button className="text-blue-600 hover:text-blue-900">Review</button>
+                          <button
+                            onClick={() => handleDeleteClick(client)}
+                            className="text-red-600 hover:text-red-900 inline-flex items-center"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -242,6 +348,257 @@ export const AdvisorDashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Add Client Modal */}
+      <Dialog
+        open={isAddClientModalOpen}
+        onClose={() => setIsAddClientModalOpen(false)}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <Dialog.Title className="text-lg font-medium text-gray-900">
+                Add New Client
+              </Dialog.Title>
+              <button
+                onClick={() => setIsAddClientModalOpen(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddClient} className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  value={newClient.name}
+                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="riskProfile" className="block text-sm font-medium text-gray-700">
+                  Risk Profile
+                </label>
+                <select
+                  id="riskProfile"
+                  value={newClient.riskProfile}
+                  onChange={(e) => setNewClient({ ...newClient, riskProfile: e.target.value as 'Conservative' | 'Moderate' | 'Aggressive' })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                >
+                  <option value="Conservative">Conservative</option>
+                  <option value="Moderate">Moderate</option>
+                  <option value="Aggressive">Aggressive</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="portfolioValue" className="block text-sm font-medium text-gray-700">
+                  Portfolio Value
+                </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">$</span>
+                  </div>
+                  <input
+                    type="text"
+                    id="portfolioValue"
+                    value={newClient.portfolioValue}
+                    onChange={(e) => setNewClient({ ...newClient, portfolioValue: e.target.value })}
+                    className="pl-7 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="100,000"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAddClientModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Add Client
+                </button>
+              </div>
+            </form>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+
+      {/* Edit Client Modal */}
+      <Dialog
+        open={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <Dialog.Title className="text-lg font-medium text-gray-900">
+                Edit Client
+              </Dialog.Title>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {selectedClient && (
+              <form onSubmit={handleEditClient} className="space-y-4">
+                <div>
+                  <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-name"
+                    value={selectedClient.name}
+                    onChange={(e) => setSelectedClient({ ...selectedClient, name: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="edit-riskProfile" className="block text-sm font-medium text-gray-700">
+                    Risk Profile
+                  </label>
+                  <select
+                    id="edit-riskProfile"
+                    value={selectedClient.riskProfile}
+                    onChange={(e) => setSelectedClient({ ...selectedClient, riskProfile: e.target.value as 'Conservative' | 'Moderate' | 'Aggressive' })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  >
+                    <option value="Conservative">Conservative</option>
+                    <option value="Moderate">Moderate</option>
+                    <option value="Aggressive">Aggressive</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="edit-portfolioValue" className="block text-sm font-medium text-gray-700">
+                    Portfolio Value
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">$</span>
+                    </div>
+                    <input
+                      type="text"
+                      id="edit-portfolioValue"
+                      value={selectedClient.portfolioValue.replace('$', '')}
+                      onChange={(e) => setSelectedClient({ ...selectedClient, portfolioValue: `$${e.target.value}` })}
+                      className="pl-7 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="edit-status" className="block text-sm font-medium text-gray-700">
+                    Status
+                  </label>
+                  <select
+                    id="edit-status"
+                    value={selectedClient.status}
+                    onChange={(e) => setSelectedClient({ ...selectedClient, status: e.target.value as 'active' | 'pending' | 'inactive' })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  >
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            )}
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog
+        open={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <Dialog.Title className="text-lg font-medium text-gray-900">
+                Confirm Delete
+              </Dialog.Title>
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">
+                Are you sure you want to delete the client "{selectedClient?.name}"? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteClient}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Delete Client
+              </button>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </div>
   );
 };
