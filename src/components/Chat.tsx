@@ -55,7 +55,7 @@ export const Chat: React.FC<ChatProps> = ({ currentUser, otherUser }) => {
       const response: Message = {
         id: (Date.now() + 1).toString(),
         sender: otherUser.id,
-        content: `This is a simulated response from ${otherUser.name}`,
+        content: `Hello there, I am  ${otherUser.name}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, response]);
