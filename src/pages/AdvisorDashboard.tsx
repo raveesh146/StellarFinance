@@ -1,604 +1,440 @@
 import React, { useState } from 'react';
-import { Users, DollarSign, FileText, BarChart as ChartBar, Clock, X, Edit, Trash2 } from 'lucide-react';
-import { Dialog } from '@headlessui/react';
+import { 
+  Users, 
+  LineChart, 
+  DollarSign, 
+  Calendar, 
+  BellRing, 
+  ChevronRight,
+  MessageSquare,
+  UserPlus,
+  BarChart,
+  PieChart,
+  Activity,
+  Settings,
+  Search,
+  Filter,
+  Star,
+  Award,
+  Clock,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
+import { WalletConnect } from '../components/walletConnect';
+import { Chat } from '../components/Chat';
 
-interface Client {
-  id: number;
-  name: string;
-  riskProfile: 'Conservative' | 'Moderate' | 'Aggressive';
-  portfolioValue: string;
-  lastReview: string;
-  status: 'active' | 'pending' | 'inactive';
-}
+// Mock data for advisor stats
+const advisorStats = [
+  { name: 'Total Clients', value: '24', change: '+3', changeType: 'increase', icon: Users, color: 'blue' },
+  { name: 'Active Portfolios', value: '18', change: '2 pending', changeType: 'neutral', icon: PieChart, color: 'purple' },
+  { name: 'AUM', value: '$2.4M', change: '+12.5%', changeType: 'increase', icon: DollarSign, color: 'green' },
+  { name: 'Client Satisfaction', value: '4.8/5', change: '+0.2', changeType: 'increase', icon: Star, color: 'amber' },
+];
 
-interface NewClient {
-  name: string;
-  riskProfile: 'Conservative' | 'Moderate' | 'Aggressive';
-  portfolioValue: string;
-}
+// Mock data for recent client activities
+const recentActivities = [
+  {
+    id: 1,
+    client: 'John Smith',
+    type: 'Portfolio Review',
+    date: '2024-03-15',
+    status: 'completed',
+    icon: LineChart,
+  },
+  {
+    id: 2,
+    client: 'Sarah Johnson',
+    type: 'Risk Assessment',
+    date: '2024-03-14',
+    status: 'pending',
+    icon: Activity,
+  },
+  {
+    id: 3,
+    client: 'Michael Brown',
+    type: 'Investment Plan',
+    date: '2024-03-13',
+    status: 'completed',
+    icon: PieChart,
+  },
+];
+
+// Mock data for upcoming meetings
+const upcomingMeetings = [
+  {
+    id: 1,
+    client: 'John Smith',
+    type: 'Quarterly Review',
+    date: '2024-03-20',
+    time: '10:00 AM',
+    priority: 'high',
+  },
+  {
+    id: 2,
+    client: 'Sarah Johnson',
+    type: 'Initial Consultation',
+    date: '2024-03-22',
+    time: '2:30 PM',
+    priority: 'medium',
+  },
+  {
+    id: 3,
+    client: 'Michael Brown',
+    type: 'Portfolio Update',
+    date: '2024-03-25',
+    time: '11:00 AM',
+    priority: 'low',
+  },
+];
+
+// Mock data for connected clients
+const connectedClients = [
+  { 
+    id: '1', 
+    name: 'John Smith', 
+    role: 'client',
+    portfolioValue: '$250,000',
+    lastContact: '2 days ago',
+    status: 'active',
+    avatar: 'JS'
+  },
+  { 
+    id: '2', 
+    name: 'Sarah Johnson', 
+    role: 'client',
+    portfolioValue: '$180,000',
+    lastContact: '1 week ago',
+    status: 'active',
+    avatar: 'SJ'
+  },
+  { 
+    id: '3', 
+    name: 'Michael Brown', 
+    role: 'client',
+    portfolioValue: '$320,000',
+    lastContact: '3 days ago',
+    status: 'pending',
+    avatar: 'MB'
+  },
+];
 
 export const AdvisorDashboard: React.FC = () => {
-  const [selectedTab, setSelectedTab] = useState('clients');
-  const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [newClient, setNewClient] = useState<NewClient>({
-    name: '',
-    riskProfile: 'Moderate',
-    portfolioValue: '',
-  });
+  const [selectedClient, setSelectedClient] = useState<{
+    id: string;
+    name: string;
+    role: 'client';
+  } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
 
-  // Move clients to state
-  const [clients, setClients] = useState<Client[]>([
-    {
-      id: 1,
-      name: 'Alice Johnson',
-      riskProfile: 'Conservative',
-      portfolioValue: '$250,000',
-      lastReview: '2024-03-01',
-      status: 'active',
-    },
-    {
-      id: 2,
-      name: 'Bob Smith',
-      riskProfile: 'Aggressive',
-      portfolioValue: '$500,000',
-      lastReview: '2024-02-28',
-      status: 'pending',
-    },
-    {
-      id: 3,
-      name: 'Carol Williams',
-      riskProfile: 'Moderate',
-      portfolioValue: '$350,000',
-      lastReview: '2024-02-25',
-      status: 'active',
-    },
-  ]);
-
-  const advisorStats = {
-    totalClients: clients.length,
-    activePortfolios: clients.filter(c => c.status === 'active').length,
-    pendingReviews: clients.filter(c => c.status === 'pending').length,
-    totalAUM: formatTotalAUM(clients),
+  const handleAddressChange = (address: string) => {
+    console.log('Wallet address changed:', address);
   };
 
-  const recentActivities = [
-    { id: 1, type: 'Portfolio Review', client: 'Alice Johnson', date: '2024-03-15', status: 'completed' },
-    { id: 2, type: 'Risk Assessment', client: 'Bob Smith', date: '2024-03-14', status: 'pending' },
-    { id: 3, type: 'Document Update', client: 'Carol Williams', date: '2024-03-13', status: 'completed' },
-  ];
-
-  function formatTotalAUM(clientList: Client[]): string {
-    const total = clientList.reduce((sum, client) => {
-      const value = parseFloat(client.portfolioValue.replace(/[$,]/g, ''));
-      return sum + value;
-    }, 0);
-    return `$${(total / 1000000).toFixed(1)}M`;
-  }
-
-  const handleAddClient = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const newClientData: Client = {
-      id: clients.length + 1,
-      name: newClient.name,
-      riskProfile: newClient.riskProfile,
-      portfolioValue: newClient.portfolioValue,
-      lastReview: new Date().toISOString().split('T')[0],
-      status: 'pending',
-    };
-
-    setClients(prevClients => [...prevClients, newClientData]);
-    setIsAddClientModalOpen(false);
-    setNewClient({
-      name: '',
-      riskProfile: 'Moderate',
-      portfolioValue: '',
-    });
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const handleEditClick = (client: Client) => {
-    setSelectedClient(client);
-    setIsEditModalOpen(true);
-  };
-
-  const handleDeleteClick = (client: Client) => {
-    setSelectedClient(client);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleEditClient = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedClient) return;
-
-    setClients(prevClients =>
-      prevClients.map(client =>
-        client.id === selectedClient.id
-          ? {
-              ...selectedClient,
-              lastReview: new Date().toISOString().split('T')[0],
-            }
-          : client
-      )
-    );
-
-    setIsEditModalOpen(false);
-    setSelectedClient(null);
-  };
-
-  const handleDeleteClient = () => {
-    if (!selectedClient) return;
-
-    setClients(prevClients => prevClients.filter(client => client.id !== selectedClient.id));
-    setIsDeleteModalOpen(false);
-    setSelectedClient(null);
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Advisor Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Manage your clients and monitor their financial portfolios
-        </p>
-      </div>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Users className="h-6 w-6 text-gray-400" />
-              </div>
-              <div className="ml-5">
-                <p className="text-sm font-medium text-gray-500">Total Clients</p>
-                <p className="text-2xl font-semibold text-gray-900">{advisorStats.totalClients}</p>
-              </div>
+              <h1 className="text-xl font-semibold text-gray-900">Advisor Dashboard</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <WalletConnect onAddressChange={handleAddressChange} />
             </div>
           </div>
         </div>
+      </nav>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ChartBar className="h-6 w-6 text-gray-400" />
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {/* Welcome Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 text-white relative overflow-hidden mb-8">
+          <div className="absolute inset-0 bg-pattern opacity-10"></div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold">Welcome back, Sarah!</h1>
+                <p className="mt-2 text-blue-100">
+                  Here's an overview of your client portfolio and upcoming activities.
+                </p>
               </div>
-              <div className="ml-5">
-                <p className="text-sm font-medium text-gray-500">Active Portfolios</p>
-                <p className="text-2xl font-semibold text-gray-900">{advisorStats.activePortfolios}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Clock className="h-6 w-6 text-gray-400" />
-              </div>
-              <div className="ml-5">
-                <p className="text-sm font-medium text-gray-500">Pending Reviews</p>
-                <p className="text-2xl font-semibold text-gray-900">{advisorStats.pendingReviews}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <DollarSign className="h-6 w-6 text-gray-400" />
-              </div>
-              <div className="ml-5">
-                <p className="text-sm font-medium text-gray-500">Total AUM</p>
-                <p className="text-2xl font-semibold text-gray-900">{advisorStats.totalAUM}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Tabs */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex">
-            <button
-              onClick={() => setSelectedTab('clients')}
-              className={`${
-                selectedTab === 'clients'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm`}
-            >
-              Client Management
-            </button>
-            <button
-              onClick={() => setSelectedTab('activities')}
-              className={`${
-                selectedTab === 'activities'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm`}
-            >
-              Recent Activities
-            </button>
-          </nav>
-        </div>
-
-        <div className="p-6">
-          {selectedTab === 'clients' && (
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-medium text-gray-900">Clients</h2>
-                <button
-                  onClick={() => setIsAddClientModalOpen(true)}
-                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Add New Client
+              <div className="flex items-center space-x-4">
+                <button className="bg-white/20 hover:bg-white/30 transition-colors duration-200 px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm flex items-center space-x-2">
+                  <UserPlus className="h-4 w-4" />
+                  <span>Add New Client</span>
+                </button>
+                <button className="bg-white/10 hover:bg-white/20 transition-colors duration-200 px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm flex items-center space-x-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>Schedule Meeting</span>
                 </button>
               </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Client Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Risk Profile
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Portfolio Value
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Last Review
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {clients.map((client) => (
-                      <tr key={client.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{client.name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">{client.riskProfile}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">{client.portfolioValue}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">{client.lastReview}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            client.status === 'active'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {client.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <button
-                            onClick={() => handleEditClick(client)}
-                            className="text-blue-600 hover:text-blue-900 inline-flex items-center"
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </button>
-                          <span className="mx-2">|</span>
-                          <button
-                            onClick={() => handleDeleteClick(client)}
-                            className="text-red-600 hover:text-red-900 inline-flex items-center"
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+          {advisorStats.map((stat) => (
+            <div
+              key={stat.name}
+              className="bg-white overflow-hidden shadow-sm rounded-2xl p-6"
+            >
+              <div className="flex items-center">
+                <div className={`p-3 rounded-lg bg-${stat.color}-50`}>
+                  <stat.icon className={`h-6 w-6 text-${stat.color}-600`} />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">{stat.name}</p>
+                  <div className="flex items-baseline">
+                    <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+                    <p className={`ml-2 text-sm font-medium ${
+                      stat.changeType === 'increase' ? 'text-green-600' :
+                      stat.changeType === 'decrease' ? 'text-red-600' : 'text-gray-500'
+                    }`}>
+                      {stat.change}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-          )}
+          ))}
+        </div>
 
-          {selectedTab === 'activities' && (
-            <div>
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Activities</h2>
-              <div className="space-y-4">
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Activities */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900">Recent Activities</h2>
+              </div>
+              <div className="divide-y divide-gray-100">
                 {recentActivities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex items-center">
-                      <FileText className="h-5 w-5 text-gray-400" />
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-gray-900">
-                          {activity.type} - {activity.client}
+                  <div key={activity.id} className="px-6 py-4 hover:bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 rounded-lg bg-gray-100">
+                          <activity.icon className="h-5 w-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{activity.client}</p>
+                          <p className="text-sm text-gray-500">{activity.type}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">
+                          {new Date(activity.date).toLocaleDateString()}
                         </p>
-                        <p className="text-sm text-gray-500">{activity.date}</p>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          activity.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {activity.status}
+                        </span>
                       </div>
                     </div>
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      activity.status === 'completed'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {activity.status}
-                    </span>
                   </div>
                 ))}
               </div>
             </div>
-          )}
+          </div>
+
+          {/* Upcoming Meetings */}
+          <div>
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900">Upcoming Meetings</h2>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {upcomingMeetings.map((meeting) => (
+                  <div key={meeting.id} className="px-6 py-4 hover:bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className={`p-2 rounded-lg ${
+                          meeting.priority === 'high' ? 'bg-red-100' :
+                          meeting.priority === 'medium' ? 'bg-yellow-100' : 'bg-green-100'
+                        }`}>
+                          <Calendar className={`h-5 w-5 ${
+                            meeting.priority === 'high' ? 'text-red-600' :
+                            meeting.priority === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                          }`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{meeting.client}</p>
+                          <div className="flex items-center text-xs text-gray-500 mt-1">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {meeting.time}
+                          </div>
+                        </div>
+                      </div>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(meeting.priority)}`}>
+                        {meeting.priority}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Clients List */}
+      <div className="fixed bottom-4 left-4 z-50">
+        <div className="bg-white rounded-2xl shadow-lg p-6 w-96 border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <Users className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Connected Clients</h3>
+                <p className="text-sm text-gray-500">Chat with your clients</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setSelectedClient(null)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            >
+              <ChevronRight className={`h-5 w-5 text-gray-400 transform transition-transform duration-200 ${
+                selectedClient ? 'rotate-90' : ''
+              }`} />
+            </button>
+          </div>
+
+          {/* Search and Filter */}
+          <div className="mb-4 space-y-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search clients..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setFilterStatus('all')}
+                className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                  filterStatus === 'all'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setFilterStatus('active')}
+                className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                  filterStatus === 'active'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => setFilterStatus('pending')}
+                className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                  filterStatus === 'pending'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                Pending
+              </button>
+            </div>
+          </div>
+          
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {connectedClients.map((client) => (
+              <button
+                key={client.id}
+                onClick={() => setSelectedClient(client)}
+                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${
+                  selectedClient?.id === client.id
+                    ? 'bg-blue-50 border border-blue-100'
+                    : 'hover:bg-gray-50 border border-transparent'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold">
+                    {client.avatar}
+                  </div>
+                  <div className="text-left">
+                    <p className={`font-medium ${
+                      selectedClient?.id === client.id ? 'text-blue-700' : 'text-gray-900'
+                    }`}>
+                      {client.name}
+                    </p>
+                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                      <span>{client.portfolioValue}</span>
+                      <span>•</span>
+                      <span>{client.lastContact}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(client.status)}`}>
+                    {client.status}
+                  </span>
+                  <ChevronRight className={`h-4 w-4 ${
+                    selectedClient?.id === client.id ? 'text-blue-600' : 'text-gray-400'
+                  }`} />
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <button className="w-full flex items-center justify-center space-x-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+              <UserPlus className="h-4 w-4" />
+              <span>Add New Client</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Add Client Modal */}
-      <Dialog
-        open={isAddClientModalOpen}
-        onClose={() => setIsAddClientModalOpen(false)}
-        className="relative z-50"
-      >
-        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <Dialog.Title className="text-lg font-medium text-gray-900">
-                Add New Client
-              </Dialog.Title>
-              <button
-                onClick={() => setIsAddClientModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddClient} className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  value={newClient.name}
-                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="riskProfile" className="block text-sm font-medium text-gray-700">
-                  Risk Profile
-                </label>
-                <select
-                  id="riskProfile"
-                  value={newClient.riskProfile}
-                  onChange={(e) => setNewClient({ ...newClient, riskProfile: e.target.value as 'Conservative' | 'Moderate' | 'Aggressive' })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                >
-                  <option value="Conservative">Conservative</option>
-                  <option value="Moderate">Moderate</option>
-                  <option value="Aggressive">Aggressive</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="portfolioValue" className="block text-sm font-medium text-gray-700">
-                  Portfolio Value
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">$</span>
-                  </div>
-                  <input
-                    type="text"
-                    id="portfolioValue"
-                    value={newClient.portfolioValue}
-                    onChange={(e) => setNewClient({ ...newClient, portfolioValue: e.target.value })}
-                    className="pl-7 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="100,000"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsAddClientModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Add Client
-                </button>
-              </div>
-            </form>
-          </Dialog.Panel>
-        </div>
-      </Dialog>
-
-      {/* Edit Client Modal */}
-      <Dialog
-        open={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        className="relative z-50"
-      >
-        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <Dialog.Title className="text-lg font-medium text-gray-900">
-                Edit Client
-              </Dialog.Title>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {selectedClient && (
-              <form onSubmit={handleEditClient} className="space-y-4">
-                <div>
-                  <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    id="edit-name"
-                    value={selectedClient.name}
-                    onChange={(e) => setSelectedClient({ ...selectedClient, name: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="edit-riskProfile" className="block text-sm font-medium text-gray-700">
-                    Risk Profile
-                  </label>
-                  <select
-                    id="edit-riskProfile"
-                    value={selectedClient.riskProfile}
-                    onChange={(e) => setSelectedClient({ ...selectedClient, riskProfile: e.target.value as 'Conservative' | 'Moderate' | 'Aggressive' })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  >
-                    <option value="Conservative">Conservative</option>
-                    <option value="Moderate">Moderate</option>
-                    <option value="Aggressive">Aggressive</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="edit-portfolioValue" className="block text-sm font-medium text-gray-700">
-                    Portfolio Value
-                  </label>
-                  <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-gray-500 sm:text-sm">$</span>
-                    </div>
-                    <input
-                      type="text"
-                      id="edit-portfolioValue"
-                      value={selectedClient.portfolioValue.replace('$', '')}
-                      onChange={(e) => setSelectedClient({ ...selectedClient, portfolioValue: `$${e.target.value}` })}
-                      className="pl-7 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="edit-status" className="block text-sm font-medium text-gray-700">
-                    Status
-                  </label>
-                  <select
-                    id="edit-status"
-                    value={selectedClient.status}
-                    onChange={(e) => setSelectedClient({ ...selectedClient, status: e.target.value as 'active' | 'pending' | 'inactive' })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  >
-                    <option value="active">Active</option>
-                    <option value="pending">Pending</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </form>
-            )}
-          </Dialog.Panel>
-        </div>
-      </Dialog>
-
-      {/* Delete Confirmation Modal */}
-      <Dialog
-        open={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        className="relative z-50"
-      >
-        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <Dialog.Title className="text-lg font-medium text-gray-900">
-                Confirm Delete
-              </Dialog.Title>
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="mt-2">
-              <p className="text-sm text-gray-500">
-                Are you sure you want to delete the client "{selectedClient?.name}"? This action cannot be undone.
-              </p>
-            </div>
-
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteClient}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              >
-                Delete Client
-              </button>
-            </div>
-          </Dialog.Panel>
-        </div>
-      </Dialog>
+      {/* Chat Component */}
+      {selectedClient && (
+        <Chat
+          currentUser={{
+            id: 'advisor-1',
+            name: 'Sarah Smith',
+            role: 'advisor',
+          }}
+          otherUser={selectedClient}
+        />
+      )}
     </div>
   );
 };
