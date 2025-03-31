@@ -1,10 +1,28 @@
 # StellarFinance
 
+StellarFinance is a decentralized financial advisory platform built on the Stellar blockchain. It connects users with verified financial advisors, enabling secure portfolio management, real-time Chat communication, and transparent financial services.
+
 ![flow](./public/architecture.png)
 
 
 
-StellarFinance is a decentralized financial advisory platform built on the Stellar blockchain. It connects users with verified financial advisors, enabling secure portfolio management, real-time Chat communication, and transparent financial services.
+
+## Problem Solved by StellarFinance
+StellarFinance addresses the inefficiencies, trust issues, and accessibility problems in traditional financial advisory services by leveraging blockchain technology. The key problems it solves are:
+
+Many financial advisors operate in opaque environments, and users often struggle to verify their credibility.
+StellarFinance enables direct client-advisor interactions with lower transaction costs and no middlemen.
+Solution: StellarFinance uses Soroban smart contracts to verify advisor credentials, maintain an immutable reputation system, and ensure transparency.
+
+High Fees & Middlemen
+
+Traditional financial advisory services involve intermediaries that increase costs.
+
+
+Users may fall victim to fraudulent advisors or mismanaged funds.
+
+Solution: Smart contracts enforce service agreements, secure payments through escrow, and ensure advisors deliver services before receiving payment.
+
 
 ## 🌟 Features
 
@@ -107,21 +125,6 @@ StellarFinance can be deployed to Vercel with minimal configuration:
    - Output Directory: `dist`
    - Framework Preset: Vite
 4. Deploy
-
-## 🔧 Configuration
-
-### Stellar Network Configuration
-
-You can configure the Stellar network connection in `src/config/stellar.ts`:
-
-```typescript
-export const STELLAR_NETWORK = import.meta.env.VITE_STELLAR_NETWORK || 'testnet';
-export const HORIZON_ENDPOINTS = {
-  testnet: 'https://horizon-testnet.stellar.org',
-  public: 'https://horizon.stellar.org',
-};
-export const SOROBAN_RPC_URL = import.meta.env.VITE_SOROBAN_RPC_URL || 'https://soroban-testnet.stellar.org';
-```
 
 ### Wallet Connection
 
