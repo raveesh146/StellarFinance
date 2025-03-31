@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BarChart, Users, FileText, AlertTriangle, TrendingUp, CheckCircle2, Clock, DollarSign, ArrowUpRight, ArrowDownRight, Wallet, BellRing, Shield, LineChart } from 'lucide-react';
 import { WalletConnect } from '../components/walletConnect';
+import { Chat } from '../components/Chat';
 
 const stats = [
   { name: 'Credit Score', value: '750', icon: BarChart, change: '+5', changeType: 'increase', color: 'blue', trend: [65, 70, 72, 68, 74, 75] },
@@ -105,235 +106,237 @@ const MiniChart: React.FC<{ data: number[], height: number, color: string }> = (
 export const Dashboard: React.FC = () => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('6M');
   const [connectedAddress, setConnectedAddress] = useState('');
+  const [selectedAdvisor, setSelectedAdvisor] = useState<{
+    id: string;
+    name: string;
+    role: 'advisor';
+  } | null>(null);
 
   const handleAddressChange = (address: string) => {
     setConnectedAddress(address);
+    console.log('Wallet address changed:', address);
   };
 
+  // Mock data for connected advisors
+  const connectedAdvisors = [
+    { id: '1', name: 'Sarah Smith', role: 'advisor' as const },
+    { id: '2', name: 'John Doe', role: 'advisor' as const },
+  ];
+
   return (
-    <div className="space-y-8 pb-8">
-      {/* Wallet Connect - Fixed position */}
-      <div className="fixed top-4 right-4 z-50">
-        <WalletConnect onAddressChange={handleAddressChange} />
-      </div>
-
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-pattern opacity-10"></div>
-        <div className="relative z-10">
-          <h1 className="text-3xl font-bold">Welcome back, John!</h1>
-          <p className="mt-2 text-blue-100">
-            Here's an overview of your financial passport. Your portfolio is performing well!
-          </p>
-          <div className="mt-4 flex items-center space-x-4">
-            <button className="bg-white/20 hover:bg-white/30 transition-colors duration-200 px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm">
-              View Portfolio Details
-            </button>
-            <button className="bg-white/10 hover:bg-white/20 transition-colors duration-200 px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm">
-              Schedule Review
-            </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-semibold text-gray-900">Stellar Finance</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <WalletConnect onAddressChange={handleAddressChange} />
+            </div>
           </div>
         </div>
-      </div>
+      </nav>
 
-      {/* Portfolio Overview */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Portfolio Overview</h2>
-              <p className="text-sm text-gray-500 mt-1">Total Assets Under Management</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setSelectedTimeframe('1M')}
-                className={`px-3 py-1 rounded-md text-sm font-medium ${
-                  selectedTimeframe === '1M'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-500 hover:bg-gray-100'
-                }`}
-              >
-                1M
-              </button>
-              <button
-                onClick={() => setSelectedTimeframe('3M')}
-                className={`px-3 py-1 rounded-md text-sm font-medium ${
-                  selectedTimeframe === '3M'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-500 hover:bg-gray-100'
-                }`}
-              >
-                3M
-              </button>
-              <button
-                onClick={() => setSelectedTimeframe('6M')}
-                className={`px-3 py-1 rounded-md text-sm font-medium ${
-                  selectedTimeframe === '6M'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-500 hover:bg-gray-100'
-                }`}
-              >
-                6M
-              </button>
-              <button
-                onClick={() => setSelectedTimeframe('1Y')}
-                className={`px-3 py-1 rounded-md text-sm font-medium ${
-                  selectedTimeframe === '1Y'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-500 hover:bg-gray-100'
-                }`}
-              >
-                1Y
-              </button>
-            </div>
-          </div>
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-gray-50 rounded-xl p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Total Value</p>
-                  <h3 className="text-2xl font-bold text-gray-900">{portfolioData.totalValue}</h3>
-                </div>
-                <div className={`flex items-center ${portfolioData.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {portfolioData.isPositive ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownRight className="h-5 w-5" />}
-                  <span className="ml-1 text-sm font-medium">{portfolioData.monthlyChange}</span>
-                </div>
-              </div>
-            </div>
-            {portfolioData.allocation.map((item, index) => (
-              <div key={item.name} className="bg-gray-50 rounded-xl p-4">
-                <p className="text-sm text-gray-500">{item.name}</p>
-                <div className="mt-2 flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-gray-900">{item.value}%</h3>
-                  <div className={`w-2 h-2 rounded-full ${item.color}`}></div>
-                </div>
-                <div className="mt-3 w-full bg-gray-200 rounded-full h-1.5">
-                  <div className={`${item.color} h-1.5 rounded-full`} style={{ width: `${item.value}%` }}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.name}
-            className="bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl border border-gray-100"
-          >
-            <div className="p-6">
-              <div className="flex items-center justify-between">
-                <div className={`p-3 rounded-lg ${getIconColor(stat.color)} bg-opacity-10`}>
-                  <stat.icon className="h-6 w-6" aria-hidden="true" />
-                </div>
-                <div className="h-16">
-                  <MiniChart data={stat.trend} height={16} color={getIconColor(stat.color)} />
-                </div>
-              </div>
-              <div className="mt-4">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">{stat.name}</dt>
-                  <dd className="mt-1 flex items-baseline justify-between">
-                    <div className="text-2xl font-semibold text-gray-900">{stat.value}</div>
-                    <div className={`ml-2 flex items-baseline text-sm font-semibold ${
-                      stat.changeType === 'increase' ? 'text-green-600' : 'text-gray-500'
-                    }`}>
-                      {stat.change}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Activity */}
-        <div className="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-          </div>
-          <ul role="list" className="divide-y divide-gray-100">
-            {recentActivity.map((activity) => (
-              <li key={activity.id} className="px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-shrink-0">
-                      <div className="p-2 rounded-lg bg-gray-50">
-                        <activity.icon className="h-5 w-5 text-gray-500" />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{activity.type}</p>
-                      <p className="text-sm text-gray-500">{activity.description}</p>
-                      <div className="flex items-center text-xs text-gray-500 mt-1">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {activity.date}
-                      </div>
-                    </div>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat) => (
+            <div
+              key={stat.name}
+              className="bg-white overflow-hidden shadow rounded-lg"
+            >
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className={`flex-shrink-0 ${getIconColor(stat.color)}`}>
+                    <stat.icon className="h-6 w-6" />
                   </div>
-                  <div>
-                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      getStatusColor(activity.status)
-                    }`}>
-                      {activity.status}
-                    </span>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">
+                        {stat.name}
+                      </dt>
+                      <dd className="flex items-baseline">
+                        <div className="text-2xl font-semibold text-gray-900">
+                          {stat.value}
+                        </div>
+                        <div
+                          className={`ml-2 flex items-baseline text-sm font-semibold ${
+                            stat.changeType === 'increase'
+                              ? 'text-green-600'
+                              : stat.changeType === 'decrease'
+                              ? 'text-red-600'
+                              : 'text-gray-500'
+                          }`}
+                        >
+                          {stat.changeType === 'increase' ? (
+                            <ArrowUpRight className="h-4 w-4" />
+                          ) : stat.changeType === 'decrease' ? (
+                            <ArrowDownRight className="h-4 w-4" />
+                          ) : null}
+                          {stat.change}
+                        </div>
+                      </dd>
+                    </dl>
                   </div>
                 </div>
-              </li>
-            ))}
-          </ul>
+                <div className="mt-4">
+                  <MiniChart
+                    data={stat.trend}
+                    height={40}
+                    color={getIconColor(stat.color)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Upcoming Tasks */}
-        <div className="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">Upcoming Tasks</h2>
+        {/* Portfolio Section */}
+        <div className="mt-8">
+          <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Portfolio Overview</h2>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <p className="text-sm text-gray-500">Total Value</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {portfolioData.totalValue}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Monthly Change</p>
+                <p
+                  className={`text-2xl font-semibold ${
+                    portfolioData.isPositive ? 'text-green-600' : 'text-red-600'
+                  }`}
+                >
+                  {portfolioData.monthlyChange}
+                </p>
+              </div>
+            </div>
+            {/* Add portfolio chart here */}
           </div>
-          <ul role="list" className="divide-y divide-gray-100">
-            {upcomingTasks.map((task) => (
-              <li key={task.id} className="px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-shrink-0">
-                      <div className={`p-2 rounded-lg ${
-                        task.priority === 'high' ? 'bg-red-50' :
-                        task.priority === 'medium' ? 'bg-yellow-50' : 'bg-green-50'
-                      }`}>
-                        <BellRing className={`h-5 w-5 ${
-                          task.priority === 'high' ? 'text-red-500' :
-                          task.priority === 'medium' ? 'text-yellow-500' : 'text-green-500'
-                        }`} />
+        </div>
+
+        {/* Recent Activity and Upcoming Tasks */}
+        <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
+          {/* Recent Activity */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
+              <div className="flow-root">
+                <ul className="-mb-8">
+                  {recentActivity.map((activity, index) => (
+                    <li key={activity.id}>
+                      <div className="relative pb-8">
+                        {index !== recentActivity.length - 1 && (
+                          <span
+                            className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <div className="relative flex space-x-3">
+                          <div>
+                            <span
+                              className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${
+                                getStatusColor(activity.status)
+                              }`}
+                            >
+                              <activity.icon className="h-5 w-5" />
+                            </span>
+                          </div>
+                          <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                            <div>
+                              <p className="text-sm text-gray-500">
+                                {activity.description}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {activity.type}
+                              </p>
+                            </div>
+                            <div className="text-right text-sm whitespace-nowrap text-gray-500">
+                              <time dateTime={activity.date}>
+                                {new Date(activity.date).toLocaleDateString()}
+                              </time>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{task.task}</p>
-                      <div className="flex items-center text-xs text-gray-500 mt-1">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Due: {task.date}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Upcoming Tasks */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Upcoming Tasks</h3>
+              <div className="flow-root">
+                <ul className="-my-5 divide-y divide-gray-200">
+                  {upcomingTasks.map((task) => (
+                    <li key={task.id} className="py-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {task.task}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Due: {new Date(task.date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div>
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(
+                              task.priority
+                            )}`}
+                          >
+                            {task.priority}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div>
-                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      getPriorityColor(task.priority)
-                    }`}>
-                      {task.priority}
-                    </span>
-                  </div>
-                </div>
-              </li>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Chat Component */}
+      {selectedAdvisor && (
+        <Chat
+          currentUser={{
+            id: 'user-1', // Replace with actual user ID
+            name: 'Current User', // Replace with actual user name
+            role: 'user',
+          }}
+          otherUser={selectedAdvisor}
+        />
+      )}
+
+      {/* Advisors List */}
+      <div className="fixed bottom-4 left-4 z-50">
+        <div className="bg-white rounded-lg shadow-lg p-4">
+          <h3 className="text-sm font-medium text-gray-900 mb-2">Connected Advisors</h3>
+          <div className="space-y-2">
+            {connectedAdvisors.map((advisor) => (
+              <button
+                key={advisor.id}
+                onClick={() => setSelectedAdvisor(advisor)}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                  selectedAdvisor?.id === advisor.id
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'hover:bg-gray-50'
+                }`}
+              >
+                {advisor.name}
+              </button>
             ))}
-          </ul>
-          <div className="px-6 py-4 bg-gray-50">
-            <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center">
-              <Clock className="h-4 w-4 mr-2" />
-              View All Tasks
-            </button>
           </div>
         </div>
       </div>

@@ -4,8 +4,8 @@ import { User, Mail, Phone, MapPin, Building } from 'lucide-react';
 export const Profile: React.FC = () => {
   // Dummy profile data
   const profile = {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
+    name: 'Raveesh',
+    email: 'raveesh.doe@example.com',
     phone: '+1 (555) 123-4567',
     address: '123 Main St, New York, NY 10001',
     company: 'Tech Solutions Inc.',
