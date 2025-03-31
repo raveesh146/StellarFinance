@@ -1,6 +1,6 @@
 # StellarFinance
 
-![StellarFinance Logo](./public/logo.png)
+![flow](./public/architecture.png)
 
 
 
@@ -9,7 +9,7 @@ StellarFinance is a decentralized financial advisory platform built on the Stell
 ## 🌟 Features
 
 ### For Users
-- **Portfolio Management**: Track and manage your Stellar-based investments
+- **Portfolio Management**: Track and manage your investments
 - **Advisor Connections**: Connect with verified financial professionals
 - **Real-time Chat**: Communicate directly with your financial advisors
 - **Wallet Integration**: Seamless integration with Stellar blockchain via Freighter wallet
@@ -22,7 +22,7 @@ StellarFinance is a decentralized financial advisory platform built on the Stell
 - **Task Management**: Schedule and track meetings and portfolio reviews
 - **Professional Profile**: Showcase certifications, specializations, and experience
 
-### For Administrators
+### For Administrator
 - **User Management**: Comprehensive tools to manage users and advisors
 - **Platform Metrics**: Track total users, active advisors, total AUM, and platform revenue
 - **Security Controls**: KYC verification and status management
@@ -64,11 +64,22 @@ git clone https://github.com/yourusername/StellarFinance.git
 cd StellarFinance
 ```
 
-### 2. Install dependencies
+### 2. Install Soroban CLI and Deploy to Stellar network
+```
+cargo install soroban-cli
+
+stellar contract deploy \
+  --wasm target/wasm32-unknown-unknown/release/contract-stellar-finance.wasm \
+  --source <SOURCE_ACCOUNT> \
+  --network testnet
+```
+
+### 3. Install dependencies
 
 ```bash
 npm install
 ```
+
 
 
 
@@ -78,7 +89,6 @@ npm install
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173/`.
 
 ### 5. Build for production
 
@@ -121,6 +131,7 @@ StellarFinance uses the Freighter wallet API for Stellar blockchain integration.
 
 ```
 StellarFinance/
+├── contracts/         # Soroban smart contract integration
 ├── public/                # Static assets
 ├── src/
 │   ├── components/        # Reusable UI components
@@ -131,9 +142,7 @@ StellarFinance/
 │   │   ├── AdvisorDashboard.tsx  # Advisor interface
 │   │   └── AdminDashboard.tsx  # Admin controls
 │   ├── config/            # Configuration files
-│   ├── contracts/         # Soroban smart contract integration
-│   │   ├── client.ts      # JavaScript client for contract interaction
-│   │   └── types.ts       # TypeScript interfaces for contract data
+
 │   ├── main.tsx           # Application entry point
 │   └── index.css          # Global styles
 ├── vercel.json            # Vercel deployment configuration
@@ -161,24 +170,6 @@ StellarFinance/
    - Manage user accounts and advisor verification
    - Monitor platform metrics and revenue
 
-## 🛣️ Roadmap
-
-- [ ] Multi-wallet support (Albedo, Lobstr, etc.)
-- [ ] Advanced analytics dashboards
-- [ ] Extended Soroban smart contract functionality
-- [ ] Mobile application development
-- [ ] Integration with traditional financial services
-- [ ] Enhanced security features and audit trails
-
-## 🤝 Contributing
-
-We welcome contributions to StellarFinance! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## 📄 License
 
