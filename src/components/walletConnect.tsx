@@ -1,37 +1,44 @@
 import React, { useEffect, useState } from 'react';
-import {
-  StellarWalletsKit,
-  WalletNetwork,
-  allowAllModules,
-  XBULL_ID,
-  FREIGHTER_ID,
-  ALBEDO_ID
-} from '@creit.tech/stellar-wallets-kit';
 import { Wallet } from 'lucide-react';
+import FreighterApi from '@stellar/freighter-api';
 
 interface WalletConnectProps {
   onAddressChange?: (address: string) => void;
 }
 
 export const WalletConnect: React.FC<WalletConnectProps> = ({ onAddressChange }) => {
-  const [kit, setKit] = useState<StellarWalletsKit | null>(null);
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string>('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isFreighterInstalled, setIsFreighterInstalled] = useState(false);
+  const [freighterApi, setFreighterApi] = useState<typeof FreighterApi | null>(null);
 
   useEffect(() => {
-    // Initialize the wallet kit
-    const initializeWallet = () => {
-      const newKit = new StellarWalletsKit({
-        network: WalletNetwork.TESTNET,
-        selectedWalletId: FREIGHTER_ID,
-        modules: allowAllModules(),
-      });
-      setKit(newKit);
+    // Initialize Freighter API
+    const initFreighter = async () => {
+      try {
+        const api = FreighterApi;
+        const { isConnected } = await api.isConnected();
+        setIsFreighterInstalled(isConnected);
+        setFreighterApi(api);
+        
+        if (isConnected) {
+          const { address } = await api.getAddress();
+          if (address) {
+            setWalletAddress(address);
+            onAddressChange?.(address);
+          }
+        } else {
+          setError('Freighter wallet is not installed. Please install it from https://www.freighter.app/');
+        }
+      } catch (err) {
+        console.error('Error initializing Freighter:', err);
+        setError('Failed to initialize Freighter wallet. Please try again.');
+      }
     };
 
-    initializeWallet();
+    initFreighter();
 
     // Close dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
@@ -42,16 +49,42 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({ onAddressChange })
     };
 
     document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [onAddressChange]);
 
   const connectWallet = async () => {
-    if (!kit) return;
+    if (!isFreighterInstalled) {
+      window.open('https://www.freighter.app/', '_blank');
+      return;
+    }
 
     try {
       setIsConnecting(true);
       setError('');
-      const { address } = await kit.getAddress();
+
+      if (!freighterApi) {
+        throw new Error('Freighter API not initialized');
+      }
+
+      // Check if already connected
+      const { isConnected } = await freighterApi.isConnected();
+      if (isConnected) {
+        const { address } = await freighterApi.getAddress();
+        if (address) {
+          setWalletAddress(address);
+          onAddressChange?.(address);
+          return;
+        }
+      }
+
+      // Request address from Freighter
+      const { address } = await freighterApi.getAddress();
+      if (!address) {
+        throw new Error('Failed to get address from Freighter');
+      }
+
       setWalletAddress(address);
       onAddressChange?.(address);
     } catch (err) {
@@ -66,19 +99,6 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({ onAddressChange })
     setWalletAddress('');
     onAddressChange?.('');
     setShowDropdown(false);
-  };
-
-  const switchWallet = async (walletId: string) => {
-    if (!kit) return;
-
-    try {
-      await kit.setWallet(walletId);
-      await connectWallet();
-      setShowDropdown(false);
-    } catch (err) {
-      setError('Failed to switch wallet. Please try again.');
-      console.error('Wallet switch error:', err);
-    }
   };
 
   const formatAddress = (address: string) => {
@@ -97,7 +117,7 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({ onAddressChange })
         <button
           onClick={connectWallet}
           disabled={isConnecting}
-          className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center text-sm font-medium"
+          className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isConnecting ? (
             <span className="flex items-center">
@@ -110,7 +130,7 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({ onAddressChange })
           ) : (
             <>
               <Wallet className="h-4 w-4 mr-2" />
-              Connect Wallet
+              {isFreighterInstalled ? 'Connect Wallet' : 'Install Freighter'}
             </>
           )}
         </button>
@@ -129,27 +149,6 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({ onAddressChange })
               <div className="px-4 py-2 border-b border-gray-100">
                 <p className="text-xs text-gray-500">Connected Address</p>
                 <p className="text-xs font-mono truncate">{walletAddress}</p>
-              </div>
-              
-              <div className="py-1">
-                <button
-                  onClick={() => switchWallet(FREIGHTER_ID)}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                >
-                  Switch to Freighter
-                </button>
-                <button
-                  onClick={() => switchWallet(XBULL_ID)}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                >
-                  Switch to xBull
-                </button>
-                <button
-                  onClick={() => switchWallet(ALBEDO_ID)}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                >
-                  Switch to Albedo
-                </button>
               </div>
 
               <div className="border-t border-gray-100 pt-1">
