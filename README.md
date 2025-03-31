@@ -2,7 +2,7 @@
 
 StellarFinance is a decentralized financial advisory platform built on the Stellar blockchain. It connects users with verified financial advisors, enabling secure portfolio management, real-time Chat communication, and transparent financial services.
 
-![flow](./public/architecture.png)
+![flow](./public/flow.png)
 
 
 
