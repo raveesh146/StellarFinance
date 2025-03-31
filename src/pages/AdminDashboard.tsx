@@ -95,7 +95,7 @@ const advisors = [
 const users = [
   {
     id: '1',
-    name: 'John Doe',
+    name: 'Raveesh Doe',
     email: 'john.doe@example.com',
     phone: '+1 (555) 123-4567',
     location: 'New York, NY',

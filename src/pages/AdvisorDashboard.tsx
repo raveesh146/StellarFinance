@@ -379,7 +379,11 @@ export const AdvisorDashboard: React.FC = () => {
             {connectedClients.map((client) => (
               <button
                 key={client.id}
-                onClick={() => setSelectedClient(client)}
+                onClick={() => setSelectedClient({
+                  id: client.id,
+                  name: client.name,
+                  role: "client"
+                })}
                 className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${
                   selectedClient?.id === client.id
                     ? 'bg-blue-50 border border-blue-100'
@@ -430,7 +434,7 @@ export const AdvisorDashboard: React.FC = () => {
           currentUser={{
             id: 'advisor-1',
             name: 'Sarah Smith',
-            role: 'advisor',
+            role: 'user',
           }}
           otherUser={selectedClient}
         />
